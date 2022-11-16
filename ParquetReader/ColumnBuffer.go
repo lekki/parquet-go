@@ -43,7 +43,9 @@ func NewColumnBuffer(pFile ParquetFile.ParquetFile, footer *parquet.FileMetaData
 		PathStr:          pathStr,
 		DataTableNumRows: -1,
 	}
-	err = res.NextRowGroup()
+	if err = res.NextRowGroup(); err == io.EOF {
+		err = nil
+	}
 	return res, err
 }
 
@@ -53,7 +55,7 @@ func (self *ColumnBufferType) NextRowGroup() error {
 	ln := int64(len(rowGroups))
 	if self.RowGroupIndex >= ln {
 		self.DataTableNumRows++ //very important, because DataTableNumRows is one smaller than real rows number
-		return fmt.Errorf("End of row groups")
+		return io.EOF
 	}
 	self.RowGroupIndex++
 
