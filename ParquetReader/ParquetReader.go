@@ -1,6 +1,7 @@
 package ParquetReader
 
 import (
+	"context"
 	"encoding/binary"
 	"reflect"
 	"sync"
@@ -23,7 +24,7 @@ type ParquetReader struct {
 	ColumnBuffers map[string]*ColumnBufferType
 }
 
-//Create a parquet reader
+// Create a parquet reader
 func NewParquetReader(pFile ParquetFile.ParquetFile, obj interface{}, np int64) (*ParquetReader, error) {
 	var err error
 	res := new(ParquetReader)
@@ -71,7 +72,7 @@ func (self *ParquetReader) SetSchemaHandlerFromJSON(jsonSchema string) error {
 	return nil
 }
 
-//Rename schema name to inname
+// Rename schema name to inname
 func (self *ParquetReader) RenameSchema() {
 	for i := 0; i < len(self.Footer.Schema); i++ {
 		self.Footer.Schema[i].Name = self.SchemaHandler.Infos[i].InName
@@ -94,7 +95,7 @@ func (self *ParquetReader) GetNumRows() int64 {
 	return self.Footer.GetNumRows()
 }
 
-//Get the footer size
+// Get the footer size
 func (self *ParquetReader) GetFooterSize() (uint32, error) {
 	var err error
 	buf := make([]byte, 4)
@@ -108,7 +109,7 @@ func (self *ParquetReader) GetFooterSize() (uint32, error) {
 	return size, err
 }
 
-//Read footer from parquet file
+// Read footer from parquet file
 func (self *ParquetReader) ReadFooter() error {
 	size, err := self.GetFooterSize()
 	if err != nil {
@@ -120,10 +121,10 @@ func (self *ParquetReader) ReadFooter() error {
 	self.Footer = parquet.NewFileMetaData()
 	pf := thrift.NewTCompactProtocolFactory()
 	protocol := pf.GetProtocol(thrift.NewStreamTransportR(self.PFile))
-	return self.Footer.Read(protocol)
+	return self.Footer.Read(context.Background(), protocol)
 }
 
-//Skip rows of parquet file
+// Skip rows of parquet file
 func (self *ParquetReader) SkipRows(num int64) error {
 	var err error
 	if num <= 0 {
@@ -169,7 +170,7 @@ func (self *ParquetReader) SkipRows(num int64) error {
 	return err
 }
 
-//Read rows of parquet file
+// Read rows of parquet file
 func (self *ParquetReader) Read(dstInterface interface{}) error {
 	var err error
 	tmap := make(map[string]*Layout.Table)
@@ -249,7 +250,7 @@ func (self *ParquetReader) Read(dstInterface interface{}) error {
 	return err
 }
 
-//Stop Read
+// Stop Read
 func (self *ParquetReader) ReadStop() {
 	for _, cb := range self.ColumnBuffers {
 		if cb != nil {
